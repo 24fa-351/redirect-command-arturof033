@@ -1,80 +1,78 @@
-#include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <stdbool.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include "redir_func.h"
 
-#define INPUT_MAX 100
-#define ARG_MAX 10
+#define MAX_CMD_INPUT 100
+#define MAX_DIR_LENGTH 100
 
-int main(int argc, char* argv[]) {
-    
-    if (argc < 3) {
-        fprintf(stderr,
-            "Usage: %s <inputfile> <command> <outputfile>\n", argv[0]);
+int main(int argc, char* argv[]){
+
+    char* words[MAX_CMD_INPUT];
+    int number_of_words = 0;
+    char absolue_path[1000];
+
+    // "wc -l" -> "/usr/bin/wc"
+    // "wc -l" -> "wc" "-l"
+    break_into_words(argv[1], words, &number_of_words, ' ');
+    if(find_absolute_path(words[1], absolue_path) == false){
+        printf("Could not find %s\n", words[1]);
         return 1;
     }
+
 
     int fd_in;
     int fd_out;
 
-    if (*argv[0] == '-'){
-        
-        fd_in = STDIN_FILENO;
+    if(find_file_directories(&fd_in, 
+                            &fd_out, 
+                            words, 
+                            number_of_words) == false){
 
-    }
-    if (*argv[3] == '-'){
-
-        fd_in = STDOUT_FILENO;
-
-    }
-    if (*argv[3] != '-'){
-        
-        int fd_in = open(argv[3], O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-        if (fd_in == -1) {
-            fprintf(stderr, "Failed to open %s\n", argv[3]);
-            return 1;
-        }
-    }
-    if(*argv[0] != '-'){
-
-        fd_out = open(argv[1], O_RDONLY);
-        if (fd_out == -1) {
-        fprintf(stderr, "Failed to open %s\n", argv[1]);
         return 1;
-        }
 
     }
 
-    char *newargv[ARG_MAX];
-    int argv_size = 0;
 
-    char *token = strtok(argv[2], " ");
-
-    while (token != NULL && argv_size < ARG_MAX){
-        newargv[argv_size] = malloc(strlen(token) + 1);
-        strcpy(newargv[argv_size], token);
-        argv_size++;
-    }
-
-    newargv[argv_size] = NULL;
-    argv_size++;
-
-    int child_pid = fork();
-    if (child_pid == 0) {
+    int pid = fork();
+    if (pid == 0) {
+        
         dup2(fd_in, STDIN_FILENO); 
         dup2(fd_out, STDOUT_FILENO);
+
+        execve(absolue_path, words + 1, NULL);
+        printf("execve failed\n");
+       
+    }
+    else if(pid != 0){
+
+        int status;
+        pid_t child_pid = waitpid(pid, &status, 0);
+
+        if (child_pid == -1) {
+            perror("waitpid");
+            exit(1);
+         }
+
+        close(fd_in);
         close(fd_out);
 
-        execve("/usr/bin/", newargv, NULL);
-    }
-
-    wait(NULL);
-    printf("%s pid is %d. forked %d. "
+        printf("%s pid is %d. forked %d. "
            "Parent exiting\n",
-        argv[0], getpid(), child_pid);
+            argv[0], getpid(), child_pid);
 
+    }
+    else {
+        perror("Fork failed");
+        exit(1);
+    }
+    
     return 0;
 }
+
+
