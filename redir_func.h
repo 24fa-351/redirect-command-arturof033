@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <fcntl.h>
-#include <ctype.h>
+#include <ctype.h> 
 
 #ifndef REDIR_FUNC
 #define REDIR_FUNC
@@ -16,6 +16,8 @@
 void add_char_to_word(char* word, char c);
 
 void break_into_words(char* input, char* words[], int *number_of_elems, char break_on);
+
+void isolate_arguments_in(char *words[], int number_of_words, char *arguments[]);
 
 bool find_absolute_path(char *no_path, char* with_path);
 
