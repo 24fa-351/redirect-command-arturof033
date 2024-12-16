@@ -6,10 +6,21 @@
 #include <stdbool.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include "redir_func.h"
+#include "redir_func.h" 
 
 #define MAX_CMD_INPUT 100
 #define MAX_DIR_LENGTH 100
+
+/*
+    ./parsepath <inputfile> <command> <outputfile>
+
+    inputfile: file containing information subject to command
+    command: one or more linux commands
+    outputfile: destination of command results
+
+    Will modify data found in the input file according to the given
+        command and output the result into the outputfile
+*/
 
 int main(int argc, char* argv[]){
 
@@ -20,11 +31,16 @@ int main(int argc, char* argv[]){
     // "wc -l" -> "/usr/bin/wc"
     // "wc -l" -> "wc" "-l"
     break_into_words(argv[1], words, &number_of_words, ' ');
+
+    // accounts for number of arguments + NULL
+    int number_of_arguments = number_of_words - 1;
+    char *arguments[number_of_arguments];
+    isolate_arguments_in(words, number_of_words, arguments);
+
     if(find_absolute_path(words[1], absolue_path) == false){
         printf("Could not find %s\n", words[1]);
         return 1;
     }
-
 
     int fd_in;
     int fd_out;
@@ -45,7 +61,7 @@ int main(int argc, char* argv[]){
         dup2(fd_in, STDIN_FILENO); 
         dup2(fd_out, STDOUT_FILENO);
 
-        execve(absolue_path, words + 1, NULL);
+        execve(absolue_path, arguments, NULL);
         printf("execve failed\n");
        
     }
@@ -57,8 +73,9 @@ int main(int argc, char* argv[]){
         if (child_pid == -1) {
             perror("waitpid");
             exit(1);
-         }
+        }
 
+        wait(NULL);
         close(fd_in);
         close(fd_out);
 
