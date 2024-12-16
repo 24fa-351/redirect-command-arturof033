@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -Wall 
-SRCS = redir.c redir_func.c
-OBJS = redir.o redir_func.o
-TARGET = redir
+SRCS = parsepath.c redir_func.c
+OBJS = parsepath.o redir_func.o
+TARGET = parsepath
 
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $(TARGET)
