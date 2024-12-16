@@ -1,9 +1,10 @@
 #include "redir_func.h"
+#include <stdio.h>
 
 void add_char_to_word(char* word, char c){
     int len = strlen(word);
     word[len] = c;
-    word[len + 1] = '\0';
+    word[len + 1] = '\0'; 
 }
 
 void break_into_words(char* input, char* words[], int *number_of_elems, char break_on){
@@ -40,8 +41,6 @@ bool find_absolute_path(char *no_path, char* with_path){
 
     char *directories[MAX_DIR_LENGTH];
     int number_of_directories = 0;
-
-    printf("where are looking for %s \n", no_path);
 
     break_into_words(getenv("PATH"), directories, &number_of_directories, ':');
     
@@ -81,14 +80,14 @@ bool find_file_directories(int *input_source, int *output_source, char *words[],
         }
 
     }
-    if (*words[2] == '-'){
+    if (*words[word_count - 1] == '-'){
 
         *output_source = STDOUT_FILENO;
 
     }
     else{
         
-        *output_source = open(words[2], O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+        *output_source = open(words[word_count - 1], O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
         if (*output_source == -1) {
             fprintf(stderr, "Failed to open %s\n", words[2]);
             return false;
@@ -99,6 +98,23 @@ bool find_file_directories(int *input_source, int *output_source, char *words[],
     return true;
 
 }
+
+void isolate_arguments_in(char *words[], int number_of_words, char *arguments[]){
+
+    for(int ix = 1; ix < number_of_words; ix++){
+
+        // terminating index
+        if(ix == number_of_words - 1){
+            arguments[ix - 1] = NULL;
+            break;
+        }
+
+        arguments[ix - 1] = words[ix];
+
+    }
+
+}
+
 
 void print_char(char *char_arr[], int arr_len){
     
